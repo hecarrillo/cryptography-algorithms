@@ -73,6 +73,8 @@ public:
     }
 };
 
+// to ron: g++ feistel.cpp -o c++14 -std=c++14 -Wall -Wextra -pedantic
+
 int main()
 {
     int message = 0b10101110;
