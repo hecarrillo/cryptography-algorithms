@@ -73,14 +73,74 @@ public:
     }
 };
 
-// to ron: g++ feistel.cpp -o c++14 -std=c++14 -Wall -Wextra -pedantic
+// to run: g++ feistel.cpp -std=c++14 -Wall -Wextra -pedantic && ./a.out
 
 int main()
-{
-    int message = 0b10101110;
-    Feistel feistel(4, 4);
-    feistel.setMessage(message);
-    feistel.encrypt();
-    feistel.printMessage();
+{   
+    string file_name;
+    cout << "Enter the file name: ";
+    cin >> file_name;
+    cout << "\n Enter the number of iterations: ";
+    int iterations;
+    cin >> iterations;
+
+    // Read the file
+    FILE *file = fopen(file_name.c_str(), "r");
+    if (file == NULL)
+    {
+        cout << "Error opening file" << endl;
+        return 0;
+    }
+
+    // Read the file and encrypt it using the feistel cipher in 64 bit blocks
+    int message = 0;
+    string final_message = "";
+    int c;
+    int i = 0;
+    while ((c = fgetc(file)) != EOF)
+    {
+        message = message << 8;
+        message += c;
+        i++;
+        if (i == 8)
+        {
+            Feistel feistel(iterations, 32);
+            feistel.setMessage(message);
+            feistel.encrypt();
+            feistel.printMessage();
+            final_message += to_string(feistel.getMessage()) + " ";
+            i = 0;
+            message = 0;
+        }
+    }
+    if (i != 0)
+    {
+        Feistel feistel(iterations, 32);
+        feistel.setMessage(message);
+        feistel.encrypt();
+        final_message += to_string(feistel.getMessage()) + " ";
+    }
+    // Write the encrypted message to a file
+    FILE *encrypted_file = fopen("encrypted.bin", "w");
+    if (encrypted_file == NULL)
+    {
+        cout << "Error opening file" << endl;
+        return 0;
+    }
+    for (int i = 0; i < final_message.length(); i++)
+    {
+        if (final_message[i] == ' ')
+        {
+            fputc(' ', encrypted_file);
+        }
+        else
+        {
+            int num = stoi(final_message.substr(i, 8));
+            fwrite(&num, sizeof(int), 1, encrypted_file);
+            i += 7;
+        }
+    }
+    fclose(encrypted_file);
+    fclose(file);
     return 0;
 }
