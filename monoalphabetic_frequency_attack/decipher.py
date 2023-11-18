@@ -36,58 +36,48 @@ def analizar_frecuencia(texto_cifrado):
 
 def descifrar_texto(texto_cifrado, frecuencias_cifrado_ordenadas, letras_adivinadas_correctamente):
     texto_descifrado = ''
-    letras_adivinadas = letras_adivinadas_correctamente.copy()
-    print("letras adivinadas: ", letras_adivinadas)
-    for caracter in texto_cifrado:
-        # Si la letra ya fue adivinada, se agrega al texto descifrado
-        if caracter in letras_adivinadas:
-            texto_descifrado += letras_adivinadas[caracter]
-            continue
-        # Si la letra no fue adivinada, se adivina con una letra de frecuencia similar
-        if len(letras_adivinadas_correctamente) > 0 and caracter.upper() in frecuencias_cifrado_ordenadas:
-            indice = frecuencias_cifrado_ordenadas.index(caracter)
-            window = 5
-            guess = ''
-            max_iterations = 10
-            iteration = 1
-            while guess == '' or guess in letras_adivinadas.values() and iteration < max_iterations:
-                iteration += 1
-                random_index_within_window = random.randint(indice - window, indice + window)
-                if random_index_within_window < 0:
-                    random_index_within_window = 0
-                elif random_index_within_window > 25:
-                    random_index_within_window = 25
-                guess = frecuencias_cifrado_ordenadas[random_index_within_window]
-            if guess == '': 
-                available_letters = [letter for letter in string.ascii_uppercase if letter not in letras_adivinadas.values()]
-                guess = available_letters[random.randint(0, len(available_letters) - 1)]
-            print("guessing char ", guess, " for  ", caracter, " at index ", random_index_within_window, " in window ", window)
-            # print("is guess in letters guessed? ", guess in letras_adivinadas.values(), "letras adivinadas: ", letras_adivinadas)
-            letras_adivinadas[caracter] = guess
-            texto_descifrado += guess
-        elif caracter in frecuencias_cifrado_ordenadas:
-            indice = frecuencias_cifrado_ordenadas.index(caracter)
-            letras_adivinadas[caracter] = frecuencias_ingles_ordenadas[indice]
-            texto_descifrado += frecuencias_ingles_ordenadas[indice]
+    letras_disponibles = list(set(frecuencias_ingles_ordenadas) - set(letras_adivinadas_correctamente.values()))
+
+    for i, caracter in enumerate(texto_cifrado):
+        if caracter.upper() in letras_adivinadas_correctamente:
+            texto_descifrado += letras_adivinadas_correctamente[caracter.upper()]
+        elif caracter.upper() in string.ascii_uppercase:
+            # Hacer la primera suposición basada en la frecuencia si no se ha adivinado aún
+            if caracter.upper() not in letras_adivinadas_correctamente:
+                if letras_disponibles:
+                    indice = frecuencias_cifrado_ordenadas.index(caracter.upper())
+                    texto_descifrado += frecuencias_ingles_ordenadas[indice] if indice < len(frecuencias_ingles_ordenadas) else caracter
+                else:
+                    texto_descifrado += caracter
+            else:
+                texto_descifrado += caracter
         else:
             texto_descifrado += caracter
+
     return texto_descifrado
 
 ruta_archivo_cifrado = 'ciphered_text.txt'
 texto_cifrado = leer_texto_cifrado(ruta_archivo_cifrado)
 frecuencias_cifrado_ordenadas = analizar_frecuencia(texto_cifrado)
+texto_descifrado = ''
 letras_adivinadas_correctamente = {}
-while(len(letras_adivinadas_correctamente) < 25):
+while True:
     texto_descifrado = descifrar_texto(texto_cifrado, frecuencias_cifrado_ordenadas, letras_adivinadas_correctamente)
-    # Mostrar el texto descifrado al usuario (primeras 50 lineas) y preguntar caracteres adivinados
-    print(texto_descifrado[:5000])
-    caracteres_adivinados = input('Ingrese los caracteres adivinados separados por un espacio o escribe TERMINAR si el texto es el correcto: ')
-    if caracteres_adivinados == 'TERMINAR': 
+
+    # Mostrar el texto descifrado al usuario y preguntar caracteres adivinados
+    print(texto_descifrado[:1000])
+    caracteres_adivinados = input('Ingrese los caracteres correctos que identificó o escribe TERMINAR si el texto es el correcto: ')
+    
+    if caracteres_adivinados.lower() == 'terminar':
         break
-    # Agregar los caracteres adivinados al diccionario
-    for caracter in caracteres_adivinados.split():
-        letra_cifrada = texto_cifrado[texto_descifrado.index(caracter.upper())]
-        letras_adivinadas_correctamente[letra_cifrada.upper()] = caracter.upper()   
+
+    # Actualizar el diccionario con las letras adivinadas correctamente
+    for caracter in caracteres_adivinados.upper():
+        if caracter in string.ascii_uppercase:  # Asegurarse de que es una letra
+            for i, c in enumerate(texto_descifrado):
+                if texto_cifrado[i].upper() == caracter:
+                    letras_adivinadas_correctamente[texto_cifrado[i].upper()] = c
+                    break
 
 # Guardar el texto descifrado en un archivo
 with open('texto_descifrado.txt', 'w', encoding='utf-8') as archivo_salida:

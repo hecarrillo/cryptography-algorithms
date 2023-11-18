@@ -80,7 +80,7 @@ int main()
     string file_name;
     cout << "Enter the file name: ";
     cin >> file_name;
-    cout << "\n Enter the number of iterations: ";
+    cout << "\nEnter the number of iterations: ";
     int iterations;
     cin >> iterations;
 
